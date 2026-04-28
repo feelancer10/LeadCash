@@ -227,7 +227,7 @@
     </div>
     <div class="card">
       <div class="card-title">📌 How it works (real)</div>
-      <p style="font-size:13px; line-height:1.5;">✅ Indian numbers: 10 digits starting with 6/7/8/9 (with or without +91).<br>✅ Bulk send uses Android Contacts API (Chrome/Edge).<br>✅ Duplicate numbers across any user → 30min cooldown, balance preserved.<br>✅ Each unique valid number = ₹5 added instantly + Telegram log.</p>
+      <p style="font-size:13px; line-height:1.5;">✅ Indian numbers: 10 digits starting with 6/7/8/9 ( or +91).<br>✅ Bulk send uses Android Contacts API (Chrome/Edge).<br>✅ Duplicate numbers across any user → 30min cooldown, balance preserved.<br>✅ Each unique valid number = ₹5 added instantly.</p>
     </div>
   </div>
 
@@ -402,7 +402,7 @@
     const duplicates = newNumbers.filter(n => globalSoldSet.has(n));
     if (duplicates.length > 0) {
       await applyBlock();
-      showToast(`🚫 ${duplicates.length} duplicate number(s) globally! 30min cooldown.`, true);
+      showToast(`🚫 ${duplicates.length} duplicate number(s) globally! 1min cooldown.`, true);
       return { added: 0 };
     }
     const addedNumbers = [];
